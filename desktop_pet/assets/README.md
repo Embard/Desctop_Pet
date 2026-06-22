@@ -1,6 +1,13 @@
 # Desktop Pet v2 Assets
 
-## Primary (realistic character)
+## Required for GitHub Actions build
+
+These files **must be committed** to the repository:
+
+- `reference_face.png`
+- `reference_pose.png`
+
+Without them CI fails at `Build sprite sheets`.
 
 - `reference_face.png` — your photo (face and upper body source)
 - `reference_pose.png` — second pose reference

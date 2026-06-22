@@ -6,15 +6,30 @@ import json
 import math
 from pathlib import Path
 
+import sys
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QImage, QPainter, QPixmap
+from PySide6.QtWidgets import QApplication
 
 FRAME_W = 96
 FRAME_H = 140
 ASSETS = Path(__file__).resolve().parent / "assets"
+_QT_APP: QApplication | None = None
+
+
+def ensure_qt_app() -> QApplication:
+    global _QT_APP
+    existing = QApplication.instance()
+    if existing is not None:
+        return existing  # type: ignore[return-value]
+    if _QT_APP is None:
+        _QT_APP = QApplication(sys.argv)
+    return _QT_APP
 
 
 def build_all_sheets(force: bool = False) -> None:
+    ensure_qt_app()
     ASSETS.mkdir(parents=True, exist_ok=True)
     meta_path = ASSETS / "animations.json"
     if meta_path.exists() and not force:
@@ -33,7 +48,8 @@ def build_all_sheets(force: bool = False) -> None:
     if upper is None:
         upper = prepare_upper_body(ASSETS / "reference_pose.png")
     if upper is None:
-        raise FileNotFoundError("reference_face.png or reference_pose.png required")
+        print("WARNING: reference photos missing or invalid, using fallback upper body.", file=sys.stderr)
+        upper = build_fallback_upper()
 
     walk_right = build_walk_sheet(upper, direction=1)
     walk_left = build_walk_sheet(upper, direction=-1)
@@ -62,10 +78,27 @@ def build_all_sheets(force: bool = False) -> None:
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
+def build_fallback_upper() -> QPixmap:
+    pixmap = QPixmap(FRAME_W - 6, 88)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QColor("#f0c7a8"))
+    painter.drawEllipse(18, 8, 52, 50)
+    painter.setBrush(QColor("#c8cdd2"))
+    painter.drawRoundedRect(12, 52, 68, 34, 12, 12)
+    painter.end()
+    return pixmap
+
+
 def prepare_upper_body(path: Path) -> QPixmap | None:
     if not path.exists():
         return None
-    image = QImage(str(path)).convertToFormat(QImage.Format.Format_ARGB32)
+    image = QImage(str(path))
+    if image.isNull():
+        return None
+    image = image.convertToFormat(QImage.Format.Format_ARGB32)
     image = image.scaledToHeight(320, Qt.TransformationMode.SmoothTransformation)
     remove_light_background(image)
     cropped = crop_visible(image)
@@ -220,15 +253,25 @@ def draw_legs(painter: QPainter, *, swing: float, top: int, mode: str, direction
 
 
 def save_sheet(frames: list[QPixmap], name: str) -> None:
+    if not frames:
+        raise ValueError(f"No frames to save for {name}")
     sheet = QPixmap(FRAME_W * len(frames), FRAME_H)
     sheet.fill(Qt.GlobalColor.transparent)
     painter = QPainter(sheet)
+    if not painter.isActive():
+        raise RuntimeError("QPainter failed to start for sprite sheet export")
     for i, frame in enumerate(frames):
         painter.drawPixmap(i * FRAME_W, 0, frame)
     painter.end()
-    sheet.save(str(ASSETS / name))
+    target = ASSETS / name
+    if not sheet.save(str(target), "PNG"):
+        raise RuntimeError(f"Failed to save sprite sheet: {target}")
 
 
 if __name__ == "__main__":
-    build_all_sheets(force=True)
-    print("Sprite sheets built.")
+    try:
+        build_all_sheets(force=True)
+        print("Sprite sheets built.")
+    except Exception as exc:
+        print(f"ERROR: sprite build failed: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
