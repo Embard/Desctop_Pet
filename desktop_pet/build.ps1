@@ -20,6 +20,9 @@ if (-not $SkipInstall) {
     & $VenvPython -m pip install -r "requirements.txt"
 }
 
+Write-Host "Building sprite sheets..."
+& $VenvPython "sprite_builder.py"
+
 Write-Host "Building DesktopPet.exe..."
 & $VenvPython -m PyInstaller `
     --noconfirm `

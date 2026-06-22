@@ -1,79 +1,64 @@
-# Desktop Pet
+# Desktop Pet v2
 
-Windows desktop pet: a small transparent always-on-top character made from your
-photos. It walks on the desktop, reacts to the mouse, can be dragged, and
-performs safe playful actions.
+Windows desktop pet with **realistic face from your photos**, true frame-by-frame walk animation, contextual phrases, and light interaction with windows and desktop icons.
+
+## Features
+
+- Real photo face (not cartoon/chibi)
+- Walk / idle / sit / jump / interact sprite animations
+- Context phrases based on location: desktop floor, taskbar, windows, shortcuts, folders
+- Can sit on icons and window title bars
+- Light nudge of windows and desktop icons (with cooldown)
+- Full process exit from Task Manager when closed
 
 ## Run From Source
 
-Open PowerShell in this folder and run:
-
 ```powershell
+cd desktop_pet
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+python sprite_builder.py
 python main.py
 ```
 
 ## Build EXE Locally
 
-Open PowerShell in this folder and run:
-
 ```powershell
 .\build.ps1
 ```
 
-The executable will be created here:
+Output: `dist\DesktopPet.exe`
 
-```text
-dist\DesktopPet.exe
-```
+## Build EXE Online (GitHub Actions)
 
-## Build EXE Online
+1. Push `desktop_pet/` and `.github/` to GitHub
+2. Actions → **Build Windows EXE** → Run workflow
+3. Download artifact `DesktopPet-windows`
 
-Push this project to GitHub, then open the repository page:
-
-1. Go to `Actions`.
-2. Select `Build Windows EXE`.
-3. Click `Run workflow`.
-4. Open the finished run and download the `DesktopPet-windows` artifact.
-
-The artifact contains `DesktopPet.exe`.
-
-Use a private repository if you add personal photos to `assets`.
+Use a **private** repository if you include personal photos.
 
 ## Controls
 
-- Left mouse button: drag the character.
-- Double left click: jump.
-- Right mouse button: open the menu.
-- The character also reacts when the cursor comes close.
+- **Left click + drag** — move character
+- **Double click** — jump
+- **Right click** — menu (jump, wave, close)
+- Character walks, approaches icons/windows, reacts to cursor
 
-## Replace The Character
+## Replace Character
 
-The current character is built from these photos in `assets`:
+Replace `assets/reference_face.png` and `assets/reference_pose.png`, then run:
 
-- `source_idle.png`
-- `source_pose.png`
+```powershell
+python sprite_builder.py
+```
 
-The app removes the light background, crops the person, scales the result down
-to a tiny desktop-pet size, and adds simple little legs because the source
-photos are waist-up.
+## Safety
 
-You can replace those two files with other photos. Use bright, plain background
-photos for the cleanest cutout.
+- Does not open files or type text automatically
+- Window/icon nudge has 7 second cooldown
+- Skips maximized and system windows
 
-Optional advanced mode: put ready transparent PNG sprites into `assets`:
+## Close / Task Manager
 
-- `pet_idle.png`
-- `pet_walk_1.png`
-- `pet_walk_2.png`
-- `pet_jump.png`
-- `pet_action.png`
-
-If no photo or sprite images are present, the app draws a temporary placeholder.
-
-## Safety Notes
-
-This version does not click inside other windows, type text, change system
-settings, or move files. The playful actions are visual only.
+Use right-click → **Закрыть**. The process fully exits (no leftover entry in Task Manager).

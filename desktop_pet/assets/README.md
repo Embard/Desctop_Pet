@@ -1,33 +1,26 @@
-# Character Assets
+# Desktop Pet v2 Assets
 
-The app uses a polished full-body sprite first:
+## Primary (realistic character)
 
-- `source_sprite.png` - main high-quality full-body desktop pet character.
+- `reference_face.png` — your photo (face and upper body source)
+- `reference_pose.png` — second pose reference
+- Generated sprite sheets (built automatically on first run):
+  - `spritesheet_walk_right.png`
+  - `spritesheet_walk_left.png`
+  - `spritesheet_idle.png`
+  - `spritesheet_sit.png`
+  - `spritesheet_jump.png`
+  - `spritesheet_interact.png`
+  - `animations.json`
 
-This gives the best result because the legs, shoes, suit, and face are part of
-one consistent image instead of being stitched together in code.
+Sprite sheets are built from your real photo — **no cartoon/chibi face**. Legs are drawn to match the grey suit style because photos are waist-up only.
 
-The app can also use source photos directly and turn them into a small desktop
-pet if `source_sprite.png` is missing.
+## Rebuild sprites
 
-Current source photo names:
+```powershell
+python sprite_builder.py
+```
 
-- `source_idle.png` - main front pose.
-- `source_pose.png` - second pose for jump/action frames.
+## Optional manual sprites
 
-For source photos, the app removes the light background at startup, scales the
-person down, and adds simple tiny legs so waist-up photos still work.
-
-Recommended file names:
-
-- `pet_idle.png` - standing pose.
-- `pet_walk_1.png` - first walking pose.
-- `pet_walk_2.png` - second walking pose.
-- `pet_jump.png` - jumping pose.
-- `pet_action.png` - waving or playful action pose.
-
-These optional `pet_*.png` files should already have transparent background.
-They are used only when source photos are missing.
-
-If both source photos and `pet_*.png` files are missing, the app draws a
-temporary placeholder character.
+If you provide ready PNG sprite sheets, update `animations.json` accordingly.

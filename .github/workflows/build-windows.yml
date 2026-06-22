@@ -30,6 +30,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Build sprite sheets
+        working-directory: desktop_pet
+        run: python sprite_builder.py
+
       - name: Build executable
         working-directory: desktop_pet
         run: |

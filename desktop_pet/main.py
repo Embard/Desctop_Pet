@@ -1,3 +1,4 @@
+import os
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -13,7 +14,9 @@ def main() -> int:
     pet = PetWindow()
     pet.show()
 
-    return app.exec()
+    code = app.exec()
+    os._exit(0)
+    return code
 
 
 if __name__ == "__main__":
