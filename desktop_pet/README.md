@@ -15,7 +15,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Build EXE
+## Build EXE Locally
 
 Open PowerShell in this folder and run:
 
@@ -29,7 +29,7 @@ The executable will be created here:
 dist\DesktopPet.exe
 ```
 
-## Build Online With GitHub Actions
+## Build EXE Online
 
 Push this project to GitHub, then open the repository page:
 

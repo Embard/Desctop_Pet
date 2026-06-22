@@ -20,11 +20,6 @@ if (-not $SkipInstall) {
     & $VenvPython -m pip install -r "requirements.txt"
 }
 
-$DataSeparator = ";"
-if ($env:OS -ne "Windows_NT") {
-    $DataSeparator = ":"
-}
-
 Write-Host "Building DesktopPet.exe..."
 & $VenvPython -m PyInstaller `
     --noconfirm `
@@ -32,7 +27,7 @@ Write-Host "Building DesktopPet.exe..."
     --windowed `
     --onefile `
     --name "DesktopPet" `
-    --add-data "assets$DataSeparatorassets" `
+    --add-data "assets;assets" `
     "main.py"
 
 Write-Host ""

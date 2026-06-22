@@ -84,27 +84,25 @@ class PetWindow(QWidget):
         self.timer.start(TICK_MS)
 
     def load_frames(self) -> dict[str, list[QPixmap]]:
-        loaded = {
-            "idle": self.load_pixmap("pet_idle.png"),
-            "walk": [
+        idle = self.load_pixmap("pet_idle.png")
+        if idle is None:
+            return self.fallback_frames()
+
+        walk_frames = [
+            frame
+            for frame in [
                 self.load_pixmap("pet_walk_1.png"),
                 self.load_pixmap("pet_walk_2.png"),
-            ],
-            "jump": self.load_pixmap("pet_jump.png"),
-            "action": self.load_pixmap("pet_action.png"),
+            ]
+            if frame is not None
+        ]
+
+        return {
+            "idle": [idle],
+            "walk": walk_frames or [idle],
+            "jump": [self.load_pixmap("pet_jump.png") or idle],
+            "action": [self.load_pixmap("pet_action.png") or idle],
         }
-
-        if loaded["idle"]:
-            idle = loaded["idle"]
-            walk = [frame for frame in loaded["walk"] if frame]
-            return {
-                "idle": [idle],
-                "walk": walk or [idle],
-                "jump": [loaded["jump"] or idle],
-                "action": [loaded["action"] or idle],
-            }
-
-        return self.fallback_frames()
 
     def load_pixmap(self, name: str) -> QPixmap | None:
         path = assets_dir() / name
@@ -190,7 +188,8 @@ class PetWindow(QWidget):
     def place_on_floor(self) -> None:
         screen = self.screen_geometry()
         self.floor_y = screen.bottom() - self.height() - FLOOR_MARGIN
-        x = screen.left() + random.randint(40, max(41, screen.width() - self.width() - 40))
+        max_x = max(screen.left() + 41, screen.right() - self.width() - 40)
+        x = random.randint(screen.left() + 40, max_x)
         self.move(x, self.floor_y)
 
     def screen_geometry(self) -> QRect:
