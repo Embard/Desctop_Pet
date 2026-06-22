@@ -3,15 +3,17 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QPoint, QRect, Qt, QTimer
-from PySide6.QtGui import QAction, QColor, QCursor, QPainter, QPainterPath, QPixmap, QTransform
+from PySide6.QtGui import QAction, QColor, QCursor, QImage, QPainter, QPainterPath, QPixmap, QTransform
 from PySide6.QtWidgets import QLabel, QMenu, QWidget
 
 
-WINDOW_WIDTH = 230
-WINDOW_HEIGHT = 280
-PET_WIDTH = 170
-PET_HEIGHT = 220
-FLOOR_MARGIN = 18
+WINDOW_WIDTH = 118
+WINDOW_HEIGHT = 145
+PET_WIDTH = 72
+PET_HEIGHT = 108
+PHOTO_HEIGHT = 78
+LEGS_TOP = 71
+FLOOR_MARGIN = 10
 TICK_MS = 33
 
 
@@ -54,14 +56,14 @@ class PetWindow(QWidget):
             QLabel {
                 background: rgba(255, 255, 255, 230);
                 border: 1px solid rgba(40, 40, 40, 130);
-                border-radius: 12px;
+                border-radius: 9px;
                 color: #202020;
-                font: 11pt "Segoe UI";
-                padding: 6px;
+                font: 8pt "Segoe UI";
+                padding: 4px;
             }
             """
         )
-        self.bubble.setGeometry(18, 10, WINDOW_WIDTH - 36, 48)
+        self.bubble.setGeometry(8, 6, WINDOW_WIDTH - 16, 34)
         self.bubble.hide()
 
         self.frames = self.load_frames()
@@ -84,6 +86,10 @@ class PetWindow(QWidget):
         self.timer.start(TICK_MS)
 
     def load_frames(self) -> dict[str, list[QPixmap]]:
+        personal_frames = self.load_personal_photo_frames()
+        if personal_frames is not None:
+            return personal_frames
+
         idle = self.load_pixmap("pet_idle.png")
         if idle is None:
             return self.fallback_frames()
@@ -103,6 +109,167 @@ class PetWindow(QWidget):
             "jump": [self.load_pixmap("pet_jump.png") or idle],
             "action": [self.load_pixmap("pet_action.png") or idle],
         }
+
+    def load_personal_photo_frames(self) -> dict[str, list[QPixmap]] | None:
+        idle_photo = self.prepare_photo_cutout("source_idle.png")
+        pose_photo = self.prepare_photo_cutout("source_pose.png") or idle_photo
+        if idle_photo is None:
+            return None
+
+        return {
+            "idle": [self.compose_photo_pet(idle_photo, step=0, lift=0, lean=0)],
+            "walk": [
+                self.compose_photo_pet(idle_photo, step=-5, lift=0, lean=-2),
+                self.compose_photo_pet(idle_photo, step=5, lift=-1, lean=2),
+            ],
+            "jump": [self.compose_photo_pet(pose_photo, step=0, lift=-12, lean=0)],
+            "action": [self.compose_photo_pet(pose_photo, step=0, lift=0, lean=-3, wave=True)],
+        }
+
+    def prepare_photo_cutout(self, name: str) -> QPixmap | None:
+        path = assets_dir() / name
+        if not path.exists():
+            return None
+
+        source = QImage(str(path))
+        if source.isNull():
+            return None
+
+        image = source.scaledToHeight(
+            260,
+            Qt.TransformationMode.SmoothTransformation,
+        ).convertToFormat(QImage.Format.Format_ARGB32)
+
+        self.remove_light_connected_background(image)
+        cropped = self.crop_to_visible(image)
+        if cropped.isNull():
+            return None
+
+        return QPixmap.fromImage(cropped).scaled(
+            PET_WIDTH - 8,
+            PHOTO_HEIGHT,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+
+    def remove_light_connected_background(self, image: QImage) -> None:
+        width = image.width()
+        height = image.height()
+        visited: set[tuple[int, int]] = set()
+        stack: list[tuple[int, int]] = []
+
+        for x in range(width):
+            stack.append((x, 0))
+            stack.append((x, height - 1))
+        for y in range(height):
+            stack.append((0, y))
+            stack.append((width - 1, y))
+
+        while stack:
+            x, y = stack.pop()
+            if x < 0 or y < 0 or x >= width or y >= height or (x, y) in visited:
+                continue
+
+            visited.add((x, y))
+            color = image.pixelColor(x, y)
+            if not self.is_background_color(color):
+                continue
+
+            color.setAlpha(0)
+            image.setPixelColor(x, y, color)
+            stack.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+
+    def is_background_color(self, color: QColor) -> bool:
+        red = color.red()
+        green = color.green()
+        blue = color.blue()
+        spread = max(red, green, blue) - min(red, green, blue)
+        return red > 168 and green > 168 and blue > 168 and spread < 42
+
+    def crop_to_visible(self, image: QImage) -> QImage:
+        min_x = image.width()
+        min_y = image.height()
+        max_x = 0
+        max_y = 0
+
+        for y in range(image.height()):
+            for x in range(image.width()):
+                if image.pixelColor(x, y).alpha() > 0:
+                    min_x = min(min_x, x)
+                    min_y = min(min_y, y)
+                    max_x = max(max_x, x)
+                    max_y = max(max_y, y)
+
+        if max_x <= min_x or max_y <= min_y:
+            return QImage()
+
+        padding = 4
+        min_x = max(0, min_x - padding)
+        min_y = max(0, min_y - padding)
+        max_x = min(image.width() - 1, max_x + padding)
+        max_y = min(image.height() - 1, max_y + padding)
+        return image.copy(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
+
+    def compose_photo_pet(
+        self,
+        photo: QPixmap,
+        *,
+        step: int,
+        lift: int,
+        lean: int,
+        wave: bool = False,
+    ) -> QPixmap:
+        pixmap = QPixmap(PET_WIDTH, PET_HEIGHT)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+        shadow_y = PET_HEIGHT - 7
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(0, 0, 0, 55))
+        painter.drawEllipse(PET_WIDTH // 4, shadow_y, PET_WIDTH // 2, 6)
+
+        # The source photos are waist-up, so the app adds simple legs to make a tiny full-body pet.
+        self.draw_photo_legs(painter, step=step, lift=lift)
+
+        transformed = photo.transformed(
+            QTransform().rotate(lean),
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        photo_x = (PET_WIDTH - transformed.width()) // 2
+        photo_y = max(0, 5 + lift)
+        painter.drawPixmap(photo_x, photo_y, transformed)
+
+        if wave:
+            self.draw_wave_mark(painter, lift=lift)
+
+        painter.end()
+        return pixmap
+
+    def draw_photo_legs(self, painter: QPainter, *, step: int, lift: int) -> None:
+        leg_color = QColor("#c8cdd2")
+        shoe_color = QColor("#30343f")
+        top = LEGS_TOP + lift
+        center = PET_WIDTH // 2
+        leg_width = max(10, PET_WIDTH // 6)
+        leg_height = max(26, PET_HEIGHT // 3)
+        left_leg = center - leg_width - 2 + step // 3
+        right_leg = center + 2 - step // 3
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(leg_color)
+        painter.drawRoundedRect(left_leg, top, leg_width, leg_height, 5, 5)
+        painter.drawRoundedRect(right_leg, top, leg_width, leg_height, 5, 5)
+
+        painter.setBrush(shoe_color)
+        painter.drawRoundedRect(left_leg - 4 + step, top + leg_height - 5, leg_width + 9, 7, 3, 3)
+        painter.drawRoundedRect(right_leg - 1 - step, top + leg_height - 5, leg_width + 9, 7, 3, 3)
+
+    def draw_wave_mark(self, painter: QPainter, *, lift: int) -> None:
+        painter.setPen(QColor("#6c63ff"))
+        painter.drawArc(PET_WIDTH - 24, 22 + lift, 12, 12, 30 * 16, 110 * 16)
+        painter.drawArc(PET_WIDTH - 18, 15 + lift, 13, 13, 20 * 16, 110 * 16)
 
     def load_pixmap(self, name: str) -> QPixmap | None:
         path = assets_dir() / name
@@ -139,7 +306,7 @@ class PetWindow(QWidget):
         jump: bool = False,
         wink: bool = False,
     ) -> QPixmap:
-        pixmap = QPixmap(PET_WIDTH, PET_HEIGHT)
+        pixmap = QPixmap(170, 220)
         pixmap.fill(Qt.GlobalColor.transparent)
 
         painter = QPainter(pixmap)
@@ -183,7 +350,12 @@ class PetWindow(QWidget):
         painter.setBrush(QColor(0, 0, 0, 45))
         painter.drawEllipse(42, 210, 86, 10)
         painter.end()
-        return pixmap
+        return pixmap.scaled(
+            PET_WIDTH,
+            PET_HEIGHT,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
 
     def place_on_floor(self) -> None:
         screen = self.screen_geometry()

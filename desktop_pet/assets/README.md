@@ -1,6 +1,14 @@
 # Character Assets
 
-Put transparent PNG images in this folder to replace the built-in placeholder.
+The app can use source photos directly and turn them into a small desktop pet.
+
+Current source photo names:
+
+- `source_idle.png` - main front pose.
+- `source_pose.png` - second pose for jump/action frames.
+
+The app removes the light background at startup, scales the person down, and
+adds simple tiny legs so waist-up photos look like a small full-body character.
 
 Recommended file names:
 
@@ -10,7 +18,8 @@ Recommended file names:
 - `pet_jump.png` - jumping pose.
 - `pet_action.png` - waving or playful action pose.
 
-Use full-body or half-body cutouts with a transparent background. The app scales
-images automatically to fit the desktop pet window.
+These optional `pet_*.png` files should already have transparent background.
+They are used only when source photos are missing.
 
-If these files are missing, the app draws a temporary placeholder character.
+If both source photos and `pet_*.png` files are missing, the app draws a
+temporary placeholder character.
