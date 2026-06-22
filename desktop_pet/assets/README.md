@@ -1,14 +1,22 @@
 # Character Assets
 
-The app can use source photos directly and turn them into a small desktop pet.
+The app uses a polished full-body sprite first:
+
+- `source_sprite.png` - main high-quality full-body desktop pet character.
+
+This gives the best result because the legs, shoes, suit, and face are part of
+one consistent image instead of being stitched together in code.
+
+The app can also use source photos directly and turn them into a small desktop
+pet if `source_sprite.png` is missing.
 
 Current source photo names:
 
 - `source_idle.png` - main front pose.
 - `source_pose.png` - second pose for jump/action frames.
 
-The app removes the light background at startup, scales the person down, and
-adds simple tiny legs so waist-up photos look like a small full-body character.
+For source photos, the app removes the light background at startup, scales the
+person down, and adds simple tiny legs so waist-up photos still work.
 
 Recommended file names:
 

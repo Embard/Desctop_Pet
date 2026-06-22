@@ -1,3 +1,4 @@
+import math
 import random
 import sys
 from pathlib import Path
@@ -7,12 +8,12 @@ from PySide6.QtGui import QAction, QColor, QCursor, QImage, QPainter, QPainterPa
 from PySide6.QtWidgets import QLabel, QMenu, QWidget
 
 
-WINDOW_WIDTH = 118
-WINDOW_HEIGHT = 145
-PET_WIDTH = 72
-PET_HEIGHT = 108
-PHOTO_HEIGHT = 78
-LEGS_TOP = 71
+WINDOW_WIDTH = 140
+WINDOW_HEIGHT = 178
+PET_WIDTH = 92
+PET_HEIGHT = 132
+PHOTO_HEIGHT = 96
+LEGS_TOP = 88
 FLOOR_MARGIN = 10
 TICK_MS = 33
 
@@ -86,6 +87,10 @@ class PetWindow(QWidget):
         self.timer.start(TICK_MS)
 
     def load_frames(self) -> dict[str, list[QPixmap]]:
+        fullbody_frames = self.load_fullbody_sprite_frames()
+        if fullbody_frames is not None:
+            return fullbody_frames
+
         personal_frames = self.load_personal_photo_frames()
         if personal_frames is not None:
             return personal_frames
@@ -109,6 +114,138 @@ class PetWindow(QWidget):
             "jump": [self.load_pixmap("pet_jump.png") or idle],
             "action": [self.load_pixmap("pet_action.png") or idle],
         }
+
+    def load_fullbody_sprite_frames(self) -> dict[str, list[QPixmap]] | None:
+        base = self.prepare_sprite_cutout("source_sprite.png")
+        if base is None:
+            return None
+
+        return {
+            "idle": self.build_smooth_frames(base, "idle", 28),
+            "walk": self.build_smooth_frames(base, "walk", 32),
+            "jump": self.build_smooth_frames(base, "jump", 18),
+            "action": self.build_smooth_frames(base, "action", 28),
+        }
+
+    def prepare_sprite_cutout(self, name: str) -> QPixmap | None:
+        path = assets_dir() / name
+        if not path.exists():
+            return None
+
+        source = QImage(str(path))
+        if source.isNull():
+            return None
+
+        image = source.scaledToHeight(
+            360,
+            Qt.TransformationMode.SmoothTransformation,
+        ).convertToFormat(QImage.Format.Format_ARGB32)
+
+        self.remove_light_connected_background(image)
+        cropped = self.crop_to_visible(image)
+        if cropped.isNull():
+            return None
+
+        return QPixmap.fromImage(cropped).scaled(
+            PET_WIDTH,
+            PET_HEIGHT - 6,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+
+    def build_smooth_frames(self, base: QPixmap, mode: str, count: int) -> list[QPixmap]:
+        frames = []
+        for index in range(count):
+            phase = index / count
+            wave = math.sin(phase * math.tau)
+            wave2 = math.sin(phase * math.tau * 2)
+
+            if mode == "idle":
+                y_offset = -1.5 + wave * 1.2
+                x_offset = 0.0
+                angle = wave * 1.1
+                scale_x = 1.0
+                scale_y = 1.0
+                shadow_scale = 1.0 - abs(wave) * 0.04
+            elif mode == "walk":
+                y_offset = -2.0 - abs(wave2) * 3.0
+                x_offset = wave * 2.4
+                angle = wave * 3.2
+                scale_x = 1.0 + abs(wave2) * 0.025
+                scale_y = 1.0 - abs(wave2) * 0.018
+                shadow_scale = 0.92 - abs(wave2) * 0.08
+            elif mode == "jump":
+                jump_arc = math.sin(phase * math.pi)
+                y_offset = -4.0 - jump_arc * 18.0
+                x_offset = 0.0
+                angle = wave * 2.0
+                scale_x = 1.0 - jump_arc * 0.025
+                scale_y = 1.0 + jump_arc * 0.03
+                shadow_scale = 0.9 - jump_arc * 0.32
+            else:
+                y_offset = -2.0 + wave * 1.8
+                x_offset = wave * 1.2
+                angle = -4.0 + wave * 2.0
+                scale_x = 1.0
+                scale_y = 1.0
+                shadow_scale = 0.96
+
+            frames.append(
+                self.compose_smooth_sprite(
+                    base,
+                    x_offset=x_offset,
+                    y_offset=y_offset,
+                    angle=angle,
+                    scale_x=scale_x,
+                    scale_y=scale_y,
+                    shadow_scale=shadow_scale,
+                    wave_mark=mode == "action" and 0.15 < phase < 0.85,
+                )
+            )
+
+        return frames
+
+    def compose_smooth_sprite(
+        self,
+        base: QPixmap,
+        *,
+        x_offset: float,
+        y_offset: float,
+        angle: float,
+        scale_x: float,
+        scale_y: float,
+        shadow_scale: float,
+        wave_mark: bool,
+    ) -> QPixmap:
+        pixmap = QPixmap(PET_WIDTH, PET_HEIGHT)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(0, 0, 0, 45))
+        shadow_width = max(24, round(PET_WIDTH * 0.58 * shadow_scale))
+        painter.drawEllipse(
+            (PET_WIDTH - shadow_width) // 2,
+            PET_HEIGHT - 8,
+            shadow_width,
+            6,
+        )
+
+        painter.translate(PET_WIDTH / 2 + x_offset, PET_HEIGHT - 8 + y_offset)
+        painter.rotate(angle)
+        painter.scale(scale_x, scale_y)
+        painter.translate(-base.width() / 2, -base.height())
+        painter.drawPixmap(0, 0, base)
+
+        painter.resetTransform()
+        if wave_mark:
+            self.draw_wave_mark(painter, lift=round(y_offset))
+
+        painter.end()
+        return pixmap
 
     def load_personal_photo_frames(self) -> dict[str, list[QPixmap]] | None:
         idle_photo = self.prepare_photo_cutout("source_idle.png")
@@ -454,8 +591,8 @@ class PetWindow(QWidget):
 
     def update_pet_frame(self) -> None:
         frames = self.frames.get(self.state, self.frames["idle"])
-        self.frame_index = (self.frame_index + 1) % max(1, len(frames) * 12)
-        pixmap = frames[(self.frame_index // 12) % len(frames)]
+        self.frame_index = (self.frame_index + 1) % max(1, len(frames))
+        pixmap = frames[self.frame_index % len(frames)]
 
         if self.velocity_x < 0:
             pixmap = pixmap.transformed(QTransform().scale(-1, 1))
