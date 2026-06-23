@@ -13,11 +13,12 @@ from PySide6.QtWidgets import QLabel, QMenu, QWidget
 from asset_loader import ensure_assets
 from animation import SpriteAnimator
 from behavior import BehaviorController, BehaviorState
+from pet_platform import PlatformTracker, feet_position, stand_y_on_floor
 
-WINDOW_WIDTH = 96
-WINDOW_HEIGHT = 168
-PET_W = 84
-PET_H = 126
+WINDOW_WIDTH = 112
+WINDOW_HEIGHT = 182
+PET_W = 100
+PET_H = 156
 FLOOR_MARGIN = 10
 TICK_MS = 33
 
@@ -61,10 +62,12 @@ class PetWindow(QWidget):
 
         self.animator = SpriteAnimator()
         self.behavior = BehaviorController()
+        self.platforms = PlatformTracker(self.behavior.scanner)
         self.dragging = False
         self.drag_offset = QPoint()
-        self.floor_y = 0
+        self.desktop_y = 0
         self.velocity_y = 0.0
+        self.falling = False
         self.bubble_ticks = 0
         self._shutting_down = False
 
@@ -78,9 +81,9 @@ class PetWindow(QWidget):
 
     def place_on_floor(self) -> None:
         screen = self.screen_geometry()
-        self.floor_y = screen.bottom() - self.height() - FLOOR_MARGIN
+        self.desktop_y = stand_y_on_floor(screen.bottom(), FLOOR_MARGIN)
         x = random.randint(screen.left() + 20, max(screen.left() + 21, screen.right() - self.width() - 20))
-        self.move(x, self.floor_y)
+        self.move(x, self.desktop_y)
 
     def screen_geometry(self) -> QRect:
         screen = self.screen()
@@ -93,15 +96,25 @@ class PetWindow(QWidget):
             return
 
         screen = self.screen_geometry()
-        center = self.geometry().center()
+        screen_rect = (screen.left(), screen.top(), screen.right(), screen.bottom())
+        feet_x, feet_y = feet_position(self.x(), self.y(), self.width())
+        platform = self.platforms.resolve(
+            x=self.x(),
+            y=self.y(),
+            window_width=self.width(),
+            screen_rect=screen_rect,
+            floor_margin=FLOOR_MARGIN,
+        )
+
         cursor = QCursor.pos()
-        cursor_dx = cursor.x() - center.x()
-        cursor_near = abs(cursor_dx) < 90 and abs(cursor.y() - center.y()) < 80
+        cursor_dx = cursor.x() - feet_x
+        cursor_near = abs(cursor_dx) < 90 and abs(cursor.y() - feet_y) < 90
 
         output = self.behavior.tick(
-            pet_center=(center.x(), center.y()),
-            screen_rect=(screen.left(), screen.top(), screen.right(), screen.bottom()),
-            floor_y=self.floor_y,
+            pet_feet=(feet_x, feet_y),
+            pet_x=self.x(),
+            platform=platform,
+            screen_rect=screen_rect,
             dragging=self.dragging,
             cursor_near=cursor_near and not self.dragging,
             cursor_dx=cursor_dx,
@@ -114,17 +127,65 @@ class PetWindow(QWidget):
             self.say(output.phrase)
 
         x = self.x() + output.velocity_x
-        y = self.y() + self.velocity_y
+        y = self.y()
+        airborne = output.state in (BehaviorState.JUMP, BehaviorState.CLIMB) or self.falling or output.allow_fall
 
-        if output.state == BehaviorState.JUMP or self.velocity_y != 0:
-            self.velocity_y = output.velocity_y if output.state == BehaviorState.JUMP else self.velocity_y + 0.55
+        if output.velocity_y != 0:
+            self.velocity_y = output.velocity_y
+            airborne = True
+        elif self.falling:
+            self.velocity_y += 0.65
+        elif not airborne:
+            self.velocity_y = 0.0
+
+        if airborne:
             y += self.velocity_y
-            if y >= self.floor_y:
-                y = self.floor_y
-                self.velocity_y = 0.0
+        elif output.lock_platform is not None:
+            y = output.lock_platform.stand_y
+            platform = output.lock_platform
+            x = max(platform.left, min(x, platform.right))
+        elif platform.is_window and output.state in (
+            BehaviorState.WALK_WINDOW,
+            BehaviorState.PAUSE,
+            BehaviorState.SIT,
+            BehaviorState.INTERACT,
+        ):
+            y = platform.stand_y
+            x = max(platform.left, min(x, platform.right))
+        else:
+            y = self.desktop_y
 
-        if output.target_y is not None and output.state == BehaviorState.SIT:
-            y = min(y, output.target_y)
+        if airborne:
+            land_feet_x, land_feet_y = feet_position(round(x), round(y), self.width())
+            landing = self.platforms.find_under_feet(
+                land_feet_x,
+                land_feet_y,
+                screen_rect,
+                self.width(),
+                FLOOR_MARGIN,
+            )
+            if landing and landing.is_window and self.velocity_y >= 0:
+                y = landing.stand_y
+                x = max(landing.left, min(x, landing.right))
+                self.velocity_y = 0.0
+                self.falling = False
+                self.behavior.state = BehaviorState.WALK_WINDOW
+                self.behavior.state_ticks = 0
+            elif land_feet_y >= screen.bottom() - FLOOR_MARGIN:
+                y = self.desktop_y
+                self.velocity_y = 0.0
+                self.falling = False
+                if self.behavior.state == BehaviorState.CLIMB:
+                    self.behavior.state = BehaviorState.ROAM
+                    self.behavior.state_ticks = 0
+        elif output.state in (BehaviorState.FLEE, BehaviorState.ROAM, BehaviorState.WALK_WINDOW):
+            if platform.is_window:
+                if x < platform.left - 4 or x > platform.right + 4:
+                    self.falling = True
+                    self.velocity_y = 1.5
+            elif y < self.desktop_y - 8:
+                self.falling = True
+                self.velocity_y = 1.5
 
         if x <= screen.left():
             x = screen.left()
@@ -156,6 +217,8 @@ class PetWindow(QWidget):
     def mousePressEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = True
+            self.falling = False
+            self.velocity_y = 0.0
             self.drag_offset = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
             self.say(random.choice(["Куда идем?", "Лечу!", "Не урони!"]))
             event.accept()
@@ -173,13 +236,14 @@ class PetWindow(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
             self.behavior.on_release()
-            self.snap_to_floor()
+            self.snap_to_surface()
             event.accept()
 
     def mouseDoubleClickEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         if event.button() == Qt.MouseButton.LeftButton:
             out = self.behavior.force_jump()
             self.velocity_y = out.velocity_y
+            self.falling = True
             if out.phrase:
                 self.say(out.phrase)
             event.accept()
@@ -201,20 +265,37 @@ class PetWindow(QWidget):
     def force_jump(self) -> None:
         out = self.behavior.force_jump()
         self.velocity_y = out.velocity_y
+        self.falling = True
         if out.phrase:
             self.say(out.phrase)
 
     def wave(self) -> None:
-        self.behavior.state = BehaviorState.INTERACT
-        self.behavior.state_ticks = 0
-        self.animator.set_clip("wave")
-        self.say("Привет!")
+        out = self.behavior.force_wave()
+        if out.phrase:
+            self.say(out.phrase)
 
-    def snap_to_floor(self) -> None:
+    def snap_to_surface(self) -> None:
         screen = self.screen_geometry()
+        screen_rect = (screen.left(), screen.top(), screen.right(), screen.bottom())
+        self.desktop_y = stand_y_on_floor(screen.bottom(), FLOOR_MARGIN)
+        feet_x, feet_y = feet_position(self.x(), self.y(), self.width())
+        landing = self.platforms.find_under_feet(
+            feet_x,
+            feet_y,
+            screen_rect,
+            self.width(),
+            FLOOR_MARGIN,
+        )
         x = min(max(self.x(), screen.left()), screen.right() - self.width())
-        self.floor_y = screen.bottom() - self.height() - FLOOR_MARGIN
-        self.move(x, self.floor_y)
+        if landing and landing.is_window:
+            y = landing.stand_y
+            x = max(landing.left, min(x, landing.right))
+            self.behavior.state = BehaviorState.WALK_WINDOW
+        else:
+            y = self.desktop_y
+        self.falling = False
+        self.velocity_y = 0.0
+        self.move(x, y)
 
     def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         self.shutdown()

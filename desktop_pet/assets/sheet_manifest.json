@@ -1,156 +1,33 @@
 {
-  "source": "master_spritesheet.png",
-  "size": [1024, 768],
+  "sheet_size": [1024, 768],
+  "target": [100, 156],
+  "rows": {
+    "walk": { "y0": 48, "y1": 96, "x0": 328, "x1": 720, "cols": 8, "gutter": 2 },
+    "run": { "y0": 140, "y1": 188, "x0": 328, "x1": 720, "cols": 8, "gutter": 2 },
+    "jump": { "y0": 278, "y1": 326, "x0": 120, "x1": 900, "cols": 4, "gutter": 3 },
+    "land": { "y0": 326, "y1": 374, "x0": 120, "x1": 900, "cols": 4, "gutter": 3 },
+    "interact": { "y0": 462, "y1": 506, "x0": 120, "x1": 900, "cols": 6, "gutter": 3 },
+    "climb_up": { "y0": 508, "y1": 556, "x0": 120, "x1": 900, "cols": 6, "gutter": 3 },
+    "climb_onto": { "y0": 556, "y1": 604, "x0": 120, "x1": 900, "cols": 6, "gutter": 3 },
+    "emote": { "y0": 646, "y1": 694, "x0": 120, "x1": 520, "cols": 4, "gutter": 3 },
+    "other": { "y0": 646, "y1": 694, "x0": 520, "x1": 900, "cols": 4, "gutter": 3 },
+    "mischief": { "y0": 694, "y1": 742, "x0": 120, "x1": 900, "cols": 4, "gutter": 3 }
+  },
   "clips": {
-    "walk_right": {
-      "y0_pct": 0.075,
-      "y1_pct": 0.133,
-      "x0_pct": 0.32,
-      "x1_pct": 0.72,
-      "max_frames": 8,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.042,
-      "fps": 12
-    },
-    "run_right": {
-      "y0_pct": 0.141,
-      "y1_pct": 0.198,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 8,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.042,
-      "fps": 14
-    },
-    "idle": {
-      "y0_pct": 0.075,
-      "y1_pct": 0.133,
-      "x0_pct": 0.32,
-      "x1_pct": 0.36,
-      "max_frames": 1,
-      "min_w_pct": 0.02,
-      "max_w_pct": 0.05,
-      "fps": 8
-    },
-    "jump": {
-      "y0_pct": 0.323,
-      "y1_pct": 0.380,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 4,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 14
-    },
-    "land": {
-      "y0_pct": 0.388,
-      "y1_pct": 0.445,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 4,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 12
-    },
-    "climb_up": {
-      "y0_pct": 0.635,
-      "y1_pct": 0.693,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 6,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 10
-    },
-    "climb_onto": {
-      "y0_pct": 0.701,
-      "y1_pct": 0.758,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 6,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 10
-    },
-    "interact_icon": {
-      "y0_pct": 0.844,
-      "y1_pct": 0.901,
-      "x0_pct": 0.12,
-      "x1_pct": 0.55,
-      "max_frames": 4,
-      "min_w_pct": 0.03,
-      "max_w_pct": 0.12,
-      "fps": 10
-    },
-    "interact_folder": {
-      "y0_pct": 0.844,
-      "y1_pct": 0.901,
-      "x0_pct": 0.45,
-      "x1_pct": 0.86,
-      "max_frames": 4,
-      "min_w_pct": 0.03,
-      "max_w_pct": 0.12,
-      "fps": 10
-    },
-    "interact_window": {
-      "y0_pct": 0.701,
-      "y1_pct": 0.758,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 6,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 10
-    },
-    "sit": {
-      "y0_pct": 0.844,
-      "y1_pct": 0.901,
-      "x0_pct": 0.55,
-      "x1_pct": 0.72,
-      "max_frames": 1,
-      "min_w_pct": 0.03,
-      "max_w_pct": 0.12,
-      "fps": 8
-    },
-    "happy": {
-      "y0_pct": 0.779,
-      "y1_pct": 0.836,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 1,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 8
-    },
-    "wave": {
-      "y0_pct": 0.779,
-      "y1_pct": 0.836,
-      "x0_pct": 0.12,
-      "x1_pct": 0.25,
-      "max_frames": 1,
-      "min_w_pct": 0.024,
-      "max_w_pct": 0.05,
-      "fps": 8
-    },
-    "mischief": {
-      "y0_pct": 0.909,
-      "y1_pct": 0.966,
-      "x0_pct": 0.12,
-      "x1_pct": 0.86,
-      "max_frames": 4,
-      "min_w_pct": 0.03,
-      "max_w_pct": 0.12,
-      "fps": 10
-    },
-    "coffee": {
-      "y0_pct": 0.844,
-      "y1_pct": 0.901,
-      "x0_pct": 0.12,
-      "x1_pct": 0.28,
-      "max_frames": 1,
-      "min_w_pct": 0.03,
-      "max_w_pct": 0.12,
-      "fps": 8
-    }
+    "walk_right": { "row": "walk", "fps": 12 },
+    "run_right": { "row": "run", "fps": 14 },
+    "idle": { "row": "walk", "fps": 8, "frame_indices": [0] },
+    "jump": { "row": "jump", "fps": 14 },
+    "land": { "row": "land", "fps": 12 },
+    "climb_up": { "row": "climb_up", "fps": 10 },
+    "climb_onto": { "row": "climb_onto", "fps": 10 },
+    "interact_icon": { "row": "interact", "fps": 10, "frame_indices": [0, 1, 2] },
+    "interact_folder": { "row": "interact", "fps": 10, "frame_indices": [3, 4, 5] },
+    "interact_window": { "row": "climb_onto", "fps": 10, "frame_indices": [0, 1, 2, 3, 4, 5] },
+    "sit": { "row": "other", "fps": 8, "frame_indices": [1] },
+    "happy": { "row": "emote", "fps": 8, "frame_indices": [1] },
+    "wave": { "row": "emote", "fps": 8, "frame_indices": [0] },
+    "coffee": { "row": "other", "fps": 8, "frame_indices": [0] },
+    "mischief": { "row": "mischief", "fps": 10, "frame_indices": [0, 1, 2, 3] }
   }
 }

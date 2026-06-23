@@ -107,16 +107,17 @@ class DesktopScanner:
         win32gui.EnumWindows(callback, None)
         return result
 
-    def scan(self, screen_rect: tuple[int, int, int, int], pet_center: tuple[int, int]) -> Surface:
+    def scan(self, screen_rect: tuple[int, int, int, int], pet_feet: tuple[int, int]) -> Surface:
         left, top, right, bottom = screen_rect
-        px, py = pet_center
+        px, py = pet_feet
 
-        taskbar_top = bottom - 48
-        if py >= taskbar_top:
-            return Surface(SurfaceType.TASKBAR, (left, taskbar_top, right, bottom), "Панель задач")
+        taskbar = self.taskbar_rect()
+        if taskbar and self._point_in_rect(px, py, taskbar):
+            return Surface(SurfaceType.TASKBAR, taskbar, "Панель задач")
 
         for surf in self._window_surfaces():
-            if self._point_in_rect(px, py, surf.rect):
+            wl, wt, wr, wb = surf.rect
+            if wl <= px <= wr and wt <= py <= wt + 36:
                 return surf
 
         if self.icons_available:
@@ -128,18 +129,38 @@ class DesktopScanner:
 
         return Surface(SurfaceType.FLOOR, screen_rect, "Рабочий стол")
 
-    def nearest_interactable(self, pet_center: tuple[int, int], max_dist: int = 180) -> Surface | None:
-        px, py = pet_center
+    def taskbar_rect(self) -> tuple[int, int, int, int] | None:
+        if win32gui is None:
+            return None
+        try:
+            hwnd = win32gui.FindWindow("Shell_TrayWnd", None)
+            if hwnd:
+                return win32gui.GetWindowRect(hwnd)
+        except Exception:
+            pass
+        return None
+
+    def nearest_window(self, pet_feet: tuple[int, int], max_dist: int = 500) -> Surface | None:
+        px, py = pet_feet
         best: Surface | None = None
         best_dist = max_dist
-
         for surf in self._window_surfaces():
             cx = (surf.rect[0] + surf.rect[2]) // 2
-            cy = (surf.rect[1] + surf.rect[3]) // 2
-            dist = abs(px - cx) + abs(py - cy)
+            title_top = surf.rect[1]
+            dist = abs(px - cx) + abs(py - (title_top + 18))
             if dist < best_dist:
                 best_dist = dist
                 best = surf
+        return best
+
+    def nearest_interactable(self, pet_feet: tuple[int, int], max_dist: int = 500) -> Surface | None:
+        px, py = pet_feet
+        window = self.nearest_window(pet_feet, max_dist)
+        if window:
+            return window
+
+        best: Surface | None = None
+        best_dist = max_dist
 
         if self.icons_available:
             for x, y, label, idx in self._icon_positions:
