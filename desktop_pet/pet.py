@@ -14,10 +14,10 @@ from asset_loader import ensure_assets
 from animation import SpriteAnimator
 from behavior import BehaviorController, BehaviorState
 
-WINDOW_WIDTH = 100
-WINDOW_HEIGHT = 150
-PET_W = 72
-PET_H = 108
+WINDOW_WIDTH = 96
+WINDOW_HEIGHT = 168
+PET_W = 84
+PET_H = 126
 FLOOR_MARGIN = 10
 TICK_MS = 33
 
@@ -38,7 +38,8 @@ class PetWindow(QWidget):
 
         self.pet_label = QLabel(self)
         self.pet_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.pet_label.setGeometry((WINDOW_WIDTH - PET_W) // 2, WINDOW_HEIGHT - PET_H, PET_W, PET_H)
+        self.pet_label.setStyleSheet("background: transparent;")
+        self.pet_label.setGeometry((WINDOW_WIDTH - PET_W) // 2, WINDOW_HEIGHT - PET_H - 4, PET_W, PET_H)
 
         self.bubble = QLabel(self)
         self.bubble.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -68,7 +69,8 @@ class PetWindow(QWidget):
         self._shutting_down = False
 
         self.place_on_floor()
-        self.animator.set_clip("idle")
+        self.behavior.facing = random.choice([-1, 1])
+        self.animator.set_clip("walk_right" if self.behavior.facing > 0 else "walk_left")
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.tick)

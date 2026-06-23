@@ -11,8 +11,8 @@ def ensure_assets() -> None:
     if (ASSETS / "master_spritesheet.png").exists():
         from sprite_importer import import_master_sheet
 
-        if import_master_sheet():
-            return
+        import_master_sheet(force=True)
+        return
 
     from sprite_builder import build_all_sheets
 

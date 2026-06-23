@@ -45,8 +45,8 @@ class BehaviorController:
         self.surface: Surface | None = None
         self.state_ticks = 0
         self.scan_cooldown = 0
-        self.facing = 1
-        self.jump_phase = "up"
+        self.facing = random.choice([-1, 1])
+        self.state_ticks = 0
 
     def tick(
         self,
@@ -60,7 +60,8 @@ class BehaviorController:
     ) -> BehaviorOutput:
         if dragging:
             self.state = BehaviorState.DRAG
-            return BehaviorOutput(BehaviorState.DRAG, "idle", 0.0, 0.0)
+            anim = "walk_right" if self.facing > 0 else "walk_left"
+            return BehaviorOutput(BehaviorState.DRAG, anim, 0.0, 0.0)
 
         self.scan_cooldown -= 1
         if self.scan_cooldown <= 0:
@@ -157,7 +158,7 @@ class BehaviorController:
             return BehaviorOutput(BehaviorState.APPROACH, anim, speed * self.facing, 0.0)
 
         if self.state == BehaviorState.ROAM:
-            if self.state_ticks > random.randint(120, 220):
+            if self.state_ticks > random.randint(60, 120):
                 self.target = self.scanner.nearest_interactable(pet_center)
                 if self.target:
                     self.state = BehaviorState.APPROACH
