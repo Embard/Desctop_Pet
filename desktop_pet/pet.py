@@ -10,14 +10,14 @@ from PySide6.QtCore import QPoint, QRect, Qt, QTimer
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QLabel, QMenu, QWidget
 
+from asset_loader import ensure_assets
 from animation import SpriteAnimator
 from behavior import BehaviorController, BehaviorState
-from sprite_builder import build_all_sheets
 
-WINDOW_WIDTH = 118
-WINDOW_HEIGHT = 158
-PET_W = 96
-PET_H = 140
+WINDOW_WIDTH = 100
+WINDOW_HEIGHT = 150
+PET_W = 72
+PET_H = 108
 FLOOR_MARGIN = 10
 TICK_MS = 33
 
@@ -25,7 +25,7 @@ TICK_MS = 33
 class PetWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        build_all_sheets()
+        ensure_assets()
 
         self.setWindowTitle("Desktop Pet")
         self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -205,7 +205,7 @@ class PetWindow(QWidget):
     def wave(self) -> None:
         self.behavior.state = BehaviorState.INTERACT
         self.behavior.state_ticks = 0
-        self.animator.set_clip("interact_icon")
+        self.animator.set_clip("wave")
         self.say("Привет!")
 
     def snap_to_floor(self) -> None:

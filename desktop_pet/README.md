@@ -45,13 +45,15 @@ Use a **private** repository if you include personal photos.
 - **Right click** — menu (jump, wave, close)
 - Character walks, approaches icons/windows, reacts to cursor
 
-## Replace Character
+## Replace Character / Animations
 
-Replace `assets/reference_face.png` and `assets/reference_pose.png`, then run:
+Put your master sprite sheet as `assets/master_spritesheet.png` and adjust crop regions in `assets/sheet_manifest.json` if needed, then run:
 
 ```powershell
-python sprite_builder.py
+python sprite_importer.py
 ```
+
+Fallback: replace `assets/reference_face.png` and run `python sprite_builder.py`.
 
 ## Safety
 

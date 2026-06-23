@@ -30,15 +30,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build sprite sheets
+      - name: Import sprite clips
         working-directory: desktop_pet
         run: |
-          if (!(Test-Path assets\reference_face.png) -and !(Test-Path assets\reference_pose.png)) {
-            Write-Error "Missing assets/reference_face.png or assets/reference_pose.png in repository"
+          if (!(Test-Path assets\master_spritesheet.png)) {
+            Write-Error "Missing assets/master_spritesheet.png in repository"
           }
-          python sprite_builder.py
+          python sprite_importer.py
+          if ($LASTEXITCODE -ne 0) {
+            python sprite_builder.py
+          }
           if (!(Test-Path assets\animations.json)) {
-            Write-Error "Sprite build did not produce assets/animations.json"
+            Write-Error "Sprite import did not produce assets/animations.json"
           }
 
       - name: Build executable

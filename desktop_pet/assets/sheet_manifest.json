@@ -1,0 +1,126 @@
+{
+  "source": "master_spritesheet.png",
+  "size": [1024, 768],
+  "clips": {
+    "walk_right": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.055,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 8,
+      "fps": 12
+    },
+    "run_right": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.098,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 8,
+      "fps": 14
+    },
+    "idle": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.055,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 1,
+      "fps": 8
+    },
+    "jump": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.292,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 4,
+      "fps": 14
+    },
+    "land": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.338,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 4,
+      "fps": 12
+    },
+    "climb_up": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.488,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 6,
+      "fps": 10
+    },
+    "climb_onto": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.578,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 6,
+      "fps": 10
+    },
+    "interact_icon": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.668,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 4,
+      "fps": 10
+    },
+    "interact_folder": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.712,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 4,
+      "fps": 10
+    },
+    "interact_window": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.534,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 6,
+      "fps": 10
+    },
+    "sit": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.655,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 1,
+      "fps": 8
+    },
+    "happy": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.598,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 1,
+      "fps": 8
+    },
+    "wave": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.598,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 1,
+      "fps": 8
+    },
+    "mischief": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.735,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 4,
+      "fps": 10
+    },
+    "coffee": {
+      "x_start_pct": 0.09,
+      "y_pct": 0.655,
+      "frame_w_pct": 0.087,
+      "frame_h_pct": 0.052,
+      "frames": 1,
+      "fps": 8
+    }
+  }
+}

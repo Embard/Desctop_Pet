@@ -21,27 +21,30 @@ class ContextEngine:
     PHRASES = {
         SurfaceType.FLOOR: [
             "Гуляю по рабочему столу.",
-            "Тут свободно, можно побегать.",
+            "Чем займёмся сегодня?",
             "Куда дальше?",
+            "Скучно...",
         ],
         SurfaceType.TASKBAR: [
             "Не наступай на панель задач!",
             "Осторожно, это панель!",
         ],
         SurfaceType.WINDOW: [
-            "Работаем?",
+            "Работаем-работаем",
+            "Я помогу!",
+            "Нужен перерыв?",
             "Это окно выглядит важным.",
-            "Можно тут постоять.",
         ],
         SurfaceType.ICON: [
             "Хочешь открыть ярлык?",
             "Я на ярлыке!",
-            "Кликни, если нужно.",
+            "Привет!",
+            "Я тут главная!",
         ],
         SurfaceType.FOLDER: [
             "Тут папка!",
             "Открыть папку?",
-            "Документы рядом.",
+            "Ой, что это я натворила?",
         ],
     }
 
@@ -55,6 +58,13 @@ class ContextEngine:
         "explorer": "Смотрим файлы?",
     }
 
+    SPECIAL = [
+        "Вау, как красиво!",
+        "Пора отдохнуть",
+        "Не поймаешь!",
+        "Спокойной ночи!",
+    ]
+
     def decide(self, surface: Surface, *, approaching: bool = False) -> ContextDecision:
         label_lower = surface.label.lower()
         phrase = random.choice(self.PHRASES.get(surface.kind, self.PHRASES[SurfaceType.FLOOR]))
@@ -65,7 +75,11 @@ class ContextEngine:
                 break
 
         if surface.kind == SurfaceType.WINDOW and surface.label:
-            phrase = f"{phrase} ({surface.label[:24]})"
+            short = surface.label[:22]
+            if approaching:
+                phrase = f"Иду к окну: {short}"
+            else:
+                phrase = random.choice(["Работаем-работаем", "Я помогу!", f"Окно: {short}"])
 
         animation = "idle"
         should_sit = False
@@ -73,21 +87,26 @@ class ContextEngine:
         nudge = None
 
         if surface.kind == SurfaceType.TASKBAR:
-            animation = "walk_left"
-        elif surface.kind in (SurfaceType.ICON, SurfaceType.FOLDER, SurfaceType.WINDOW):
-            if approaching:
-                animation = "walk_right"
-            else:
-                animation = {
-                    SurfaceType.WINDOW: "interact_window",
-                    SurfaceType.ICON: "interact_icon",
-                    SurfaceType.FOLDER: "interact_folder",
-                }[surface.kind]
-                should_sit = surface.kind != SurfaceType.WINDOW
-                should_interact = True
-                nudge = surface
+            animation = "run_left"
+        elif surface.kind == SurfaceType.WINDOW:
+            animation = "walk_right" if approaching else "climb_onto"
+            should_interact = not approaching
+            nudge = None if approaching else surface
+        elif surface.kind == SurfaceType.ICON:
+            animation = "walk_right" if approaching else "interact_icon"
+            should_sit = not approaching
+            should_interact = not approaching
+            nudge = None if approaching else surface
+        elif surface.kind == SurfaceType.FOLDER:
+            animation = "walk_right" if approaching else "interact_folder"
+            should_sit = not approaching
+            should_interact = not approaching
+            nudge = None if approaching else surface
         else:
-            animation = "walk_right" if approaching else "idle"
+            animation = "walk_right" if approaching else random.choice(["idle", "happy", "coffee"])
+
+        if random.random() < 0.08 and not approaching:
+            phrase = random.choice(self.SPECIAL)
 
         return ContextDecision(
             animation=animation,

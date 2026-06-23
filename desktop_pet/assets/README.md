@@ -1,33 +1,22 @@
 # Desktop Pet v2 Assets
 
-## Required for GitHub Actions build
+## Primary sprite sheet (recommended)
 
-These files **must be committed** to the repository:
+- `master_spritesheet.png` — your full animation sheet
+- `sheet_manifest.json` — crop regions for each animation clip
 
-- `reference_face.png`
-- `reference_pose.png`
+On startup/build, `sprite_importer.py` slices the master sheet into individual clips and writes `animations.json`.
 
-Without them CI fails at `Build sprite sheets`.
+## Fallback (if master sheet missing)
 
-- `reference_face.png` — your photo (face and upper body source)
-- `reference_pose.png` — second pose reference
-- Generated sprite sheets (built automatically on first run):
-  - `spritesheet_walk_right.png`
-  - `spritesheet_walk_left.png`
-  - `spritesheet_idle.png`
-  - `spritesheet_sit.png`
-  - `spritesheet_jump.png`
-  - `spritesheet_interact.png`
-  - `animations.json`
+- `reference_face.png` / `reference_pose.png` — used by `sprite_builder.py`
 
-Sprite sheets are built from your real photo — **no cartoon/chibi face**. Legs are drawn to match the grey suit style because photos are waist-up only.
-
-## Rebuild sprites
+## Rebuild clips
 
 ```powershell
-python sprite_builder.py
+python sprite_importer.py
 ```
 
-## Optional manual sprites
+## Required for GitHub Actions
 
-If you provide ready PNG sprite sheets, update `animations.json` accordingly.
+Commit `master_spritesheet.png` and `sheet_manifest.json` together.

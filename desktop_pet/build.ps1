@@ -20,8 +20,12 @@ if (-not $SkipInstall) {
     & $VenvPython -m pip install -r "requirements.txt"
 }
 
-Write-Host "Building sprite sheets..."
-& $VenvPython "sprite_builder.py"
+Write-Host "Importing sprite clips..."
+& $VenvPython "sprite_importer.py"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Sprite import failed, trying fallback builder..."
+    & $VenvPython "sprite_builder.py"
+}
 
 Write-Host "Building DesktopPet.exe..."
 & $VenvPython -m PyInstaller `
